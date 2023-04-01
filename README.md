@@ -9,7 +9,7 @@ npm install @cloudparker/easy-color-picker-svelte --save-dev
 
 # Screenshot
 
-<img src="https://raw.githubusercontent.com/paramanandapradhan/screenshots/master/%40cloudparker/easy-color-picker/screenshot.webp" width="340">
+<img src="https://raw.githubusercontent.com/paramanandapradhan/easy-color-picker-svelte/main/static/easy-color-picker.webp" width="340">
 
 # Sample
 ```html
