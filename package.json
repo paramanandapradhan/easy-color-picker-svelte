@@ -1,6 +1,6 @@
 {
 	"name": "@cloudparker/easy-color-picker-svelte",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"author": "cloudparker.com",
 	"license": "MIT",
 	"keywords": [
@@ -32,12 +32,12 @@
 		"dist"
 	],
 	"peerDependencies": {
-		"svelte": "^3.54.0"
+		"svelte": "^3.54.0",
+		"@sveltejs/kit": "^1.5.0"
 	},
-	"devDependencies": {
+	"dependencies": {
 		"@playwright/test": "^1.28.1",
 		"@sveltejs/adapter-auto": "^2.0.0",
-		"@sveltejs/kit": "^1.5.0",
 		"@sveltejs/package": "^2.0.0",
 		"@typescript-eslint/eslint-plugin": "^5.45.0",
 		"@typescript-eslint/parser": "^5.45.0",

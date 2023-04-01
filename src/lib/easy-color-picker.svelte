@@ -387,9 +387,9 @@
 		flex-grow: 1;
 		display: flex;
 		flex-wrap: wrap;
-		max-width: 180px;
+		max-width: 184px;
 		padding: 0 2px;
-		margin-left: 8px;
+		margin-left: 6px;
 		.pallete {
 			width: 16px;
 			margin: 1px;
