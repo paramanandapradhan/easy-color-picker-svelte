@@ -1,372 +1,405 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import {
+		copyText,
+		estimateColorPosition,
+		getCanvasEventXY,
+		hexToRGBA,
+		isValidHexColor,
+		rgbaToHex
+	} from './utils';
+	import { onMount, createEventDispatcher } from 'svelte';
+	import { browser } from '$app/environment';
 
-	export let rgbaOutput: boolean = false;
+	let defaultColorPalletes: string[] = [
+		'#f44336',
+		'#E91E63',
+		'#9c27b0',
+		'#673ab7',
+		'#3f51b5',
+		'#2196F3',
+		'#03a9f4',
+		'#00bcd4',
+		'#009688',
+		'#4caf50',
+		'#8bc34a',
+		'#cddc39',
+		'#ffeb3b',
+		'#ffc107',
+		'#ff9800',
+		'#ff5722',
+		'#795548',
+		'#9e9e9e',
+		'#607d8b',
+		'#ffffff',
+		'#000000'
+	];
 
-	let dispatch = createEventDispatcher();
+	export let color = '#0000ff';
+	export let rgbaFormat: boolean = false;
+	export let copyString = 'Copied!';
+	export let colorPalletes: string[] = [];
 
-	let gradientCanvasRef: HTMLCanvasElement;
-	let colorBarCanvasRef: HTMLCanvasElement;
-	let alphaCanvasRef: HTMLCanvasElement;
-	let selectedColorDivRef: HTMLDivElement;
+	const dispatch = createEventDispatcher();
+	let canvas: HTMLCanvasElement;
+	let alphaCanvas: HTMLCanvasElement;
 
-	let gradientCtx: CanvasRenderingContext2D | null;
-	let colorBarCtx: CanvasRenderingContext2D | null;
-	let alphaBarCtx: CanvasRenderingContext2D | null;
+	let ctx: CanvasRenderingContext2D;
+	let alphaCtx: CanvasRenderingContext2D;
+	let gradient: CanvasGradient;
+	let alphaGradient: CanvasGradient;
+	let isGradientDragging: boolean = false;
+	let isAlphaDragging: boolean = false;
+	let rgba: { r: number; g: number; b: number; a: number } = { r: 255, g: 255, b: 255, a: 1 };
+	let oldColor: string;
+	let isCopied: boolean = false;
+	let palletes: string[] = [];
 
-	let selectedColor = { r: 255, g: 0, b: 0, a: 1 };
-	let hue = 0;
-	let rgbaColor = '#000';
-	let hexColor = '';
-	let isColorBarDragging = false;
-	let isGradientDragging = false;
-	let isAlphaDragging = false;
-	let selectedX: number = 0;
-	let selectedY: number = 0;
+	const KEY_COLORS = 'easy.colors.values';
 
-	const alphaBarWidth = 256;
-	const alphaBarHeight = 20;
-	const alphaBarColorStart = 'white';
-	const alphaBarColorEnd = 'rgba(0,0,0,0)';
+	$: calculatePalletes(palletes);
 
-	const getEventCoodinates = (canvas: HTMLCanvasElement, event: any): { x: number; y: number } => {
-		let x: number = 0;
-		let y: number = 0;
-		if (canvas && event) {
-			if (event.touches && event.touches[0]) {
-				const rect = canvas.getBoundingClientRect();
-				x = event.touches[0].clientX - rect.left;
-				y = event.touches[0].clientY - rect.top;
-			} else {
-				x = event.offsetX;
-				y = event.offsetY;
-			}
-		}
-		if (x < 0) x = 0;
-		if (x > 255) x = 255;
-		if (y < 0) y = 0;
-		if (y > 255) y = 255;
-		return { x, y };
-	};
- 
-	const rgbaToHex = (r: number, g: number, b: number, a: number) => {
-		let alphaHex: string = 'ff';
-		if (a > 0 && a < 1) {
-			alphaHex = Math.round(a * 255)
-				.toString(16)
-				.padStart(2, '0');
-		}
-
-		const hex =
-			'#' +
-			((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1) +
-			(alphaHex == 'ff' ? '' : alphaHex);
-		return hex;
-	};
- 
-
-	function drawAlphaBar() {
-		let color = { r: 256, g: 256, b: 256 };
-		if (alphaBarCtx) {
-			alphaBarCtx.clearRect(0, 0, alphaBarWidth, alphaBarHeight);
-			drawTransparentGrid();
-			const gradient = alphaBarCtx.createLinearGradient(0, 0, alphaBarWidth, 0);
-			gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-			gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 1)`);
-			alphaBarCtx.fillStyle = gradient;
-			alphaBarCtx.fillRect(0, 0, alphaBarWidth, alphaBarHeight);
+	export function save(color: string) {
+		if (isValidHexColor(color)) {
+			setColor(color);
+			saveLocalColor(color);
+			calculatePalletes();
+			selectColor();
 		}
 	}
-
-	const drawGradient = () => {
-		if (gradientCtx) {
-			gradientCtx.clearRect(0, 0, alphaBarWidth, alphaBarHeight);
-			const gradient = gradientCtx.createLinearGradient(0, 0, 256, 0);
-			gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-			gradient.addColorStop(1, `hsla(${hue}, 100%, 50%, 1)`);
-
-			gradientCtx.fillStyle = gradient;
-			gradientCtx.fillRect(0, 0, 256, 256);
-
-			const alphaGradient = gradientCtx.createLinearGradient(0, 0, 0, 256);
-			alphaGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-			alphaGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
-
-			gradientCtx.fillStyle = alphaGradient;
-			gradientCtx.fillRect(0, 0, 256, 256);
-		}
-	};
-
-	const drawColorBar = () => {
-		if (colorBarCtx) {
-			colorBarCtx.clearRect(0, 0, alphaBarWidth, alphaBarHeight);
-			const gradient = colorBarCtx.createLinearGradient(0, 0, 256, 0);
-			gradient.addColorStop(0, 'rgba(255, 0, 0, 1)');
-			gradient.addColorStop(1 / 6, 'rgba(255, 255, 0, 1)');
-			gradient.addColorStop(2 / 6, 'rgba(0, 255, 0, 1)');
-			gradient.addColorStop(3 / 6, 'rgba(0, 255, 255, 1)');
-			gradient.addColorStop(4 / 6, 'rgba(0, 0, 255, 1)');
-			gradient.addColorStop(5 / 6, 'rgba(255, 0, 255, 1)');
-			gradient.addColorStop(1, 'rgba(255, 0, 0, 1)');
-
-			colorBarCtx.fillStyle = gradient;
-			colorBarCtx.fillRect(0, 0, 256, 20);
-		}
-	};
-
-	const drawColorbarSelector = (x: number = 0, y: number = 0) => {
-		if (colorBarCtx) {
-			x = x - 4;
-
-			colorBarCtx.shadowColor = 'gray';
-			colorBarCtx.shadowBlur = 2;
-			colorBarCtx.shadowOffsetX = 1;
-			colorBarCtx.shadowOffsetY = 1;
-
-			colorBarCtx.strokeStyle = '#ffffff';
-			colorBarCtx.lineWidth = 4;
-			colorBarCtx.strokeRect(x, y, 8, 20);
-		}
-	};
-
-	const drawAlphabarSelector = (x: number = 0, y: number = 0) => {
-		if (alphaBarCtx) {
-			x = x - 4;
-
-			alphaBarCtx.shadowColor = 'gray';
-			alphaBarCtx.shadowBlur = 2;
-			alphaBarCtx.shadowOffsetX = 1;
-			alphaBarCtx.shadowOffsetY = 1;
-
-			alphaBarCtx.strokeStyle = '#ffffff';
-			alphaBarCtx.lineWidth = 4;
-			alphaBarCtx.strokeRect(x, y, 8, 20);
-		}
-	};
-
-	const updateSelectedColor = () => {
-		rgbaColor = `rgba(${selectedColor.r}, ${selectedColor.g}, ${selectedColor.b}, ${selectedColor.a})`;
-		hexColor = rgbaToHex(selectedColor.r, selectedColor.g, selectedColor.b, selectedColor.a);
-		if (rgbaOutput) {
-			dispatch('change', rgbaColor);
-		} else {
-			dispatch('change', hexColor);
-		}
-	};
-
-	const handleGradientCanvasChnage = (e: any) => {
-		if (!isGradientDragging && !e.force) return;
-		if (gradientCtx && e) {
-			drawGradient();
-			let { x, y } = getEventCoodinates(gradientCanvasRef, e);
-			selectedX = x;
-			selectedY = y;
-			const imageData = gradientCtx.getImageData(x, y, 1, 1).data;
-
-			selectedColor.r = imageData[0];
-			selectedColor.g = imageData[1];
-			selectedColor.b = imageData[2];
-			updateSelectedColor();
-			drawGradientSelector(x, y);
-		}
-	};
-
-	const handleColorBarChange = (e: any) => {
-		if (!isColorBarDragging && !e.force) return;
-		if (e && colorBarCtx) {
-			let { x, y } = getEventCoodinates(gradientCanvasRef, e);
-			console.log('handleColorBarChange', x, y);
-			drawColorBar();
-			// const imageData = colorBarCtx.getImageData(x, 0, 1, 1).data;
-			hue = (x / 256) * 360;
-			handleGradientCanvasChnage({
-				offsetX: selectedX,
-				offsetY: selectedY,
-				force: true
-			});
-			drawColorbarSelector(x, 0);
-		}
-	};
-
-	const handleAlphaBarChange = (e: any) => {
-		if (!isAlphaDragging && !e.force) return;
-		if (e) {
-			let { x, y } = getEventCoodinates(gradientCanvasRef, e);
-			drawAlphaBar();
-			const alpha = x / 256;
-			selectedColor.a = alpha;
-			updateSelectedColor();
-			handleGradientCanvasChnage({ offsetX: selectedX, offsetY: selectedY, force: true });
-			drawAlphabarSelector(x, 0);
-		}
-	};
-
-	const drawGradientSelector = (x: number = 0, y: number = 0) => {
-		if (gradientCtx) {
-			gradientCtx.shadowColor = 'gray';
-			gradientCtx.shadowBlur = 4;
-			gradientCtx.shadowOffsetX = 2;
-			gradientCtx.shadowOffsetY = 2;
-
-			gradientCtx.strokeStyle = '#ffffff';
-			gradientCtx.lineWidth = 4;
-
-			gradientCtx.beginPath();
-			gradientCtx.arc(x, y, 10, 0, 2 * Math.PI);
-			gradientCtx.stroke();
-		}
-	};
-
-	function drawTransparentGrid() {
-		if (alphaBarCtx) {
-			let gridSize = 8;
-			const color1 = 'rgba(255, 255, 255, 1)'; // Light color
-			const color2 = 'rgba(204, 204, 204, 1)'; // Dark color
-			for (let x = 0; x < alphaBarWidth; x += gridSize) {
-				for (let y = 0; y < alphaBarHeight; y += gridSize) {
-					alphaBarCtx.fillStyle = (x / gridSize) % 2 === (y / gridSize) % 2 ? color1 : color2;
-					alphaBarCtx.fillRect(x, y, gridSize, gridSize);
-				}
-			}
-		}
-	}
-
-	const init = () => {
-		gradientCtx = gradientCanvasRef.getContext('2d');
-		colorBarCtx = colorBarCanvasRef.getContext('2d');
-		alphaBarCtx = alphaCanvasRef.getContext('2d');
-	};
 
 	onMount(() => {
-		init();
+		rgba = hexToRGBA(color);
+		ctx = canvas.getContext('2d', { willReadFrequently: true }) as any;
+		alphaCtx = alphaCanvas.getContext('2d') as any;
+		drawColor();
 		drawAlphaBar();
-		drawGradient();
-		drawColorBar();
-		updateSelectedColor();
+		setColor(color);
 	});
+
+	function calculatePalletes(_?: string[]) {
+		palletes = [...colorPalletes.slice(0, 4), ...defaultColorPalletes];
+		let colors: string[] = getLocalColors();
+		let array: string[] = [];
+		for (let i = 0; i < 30 - palletes.length; i++) {
+			let c = colors[i];
+			if (c) {
+				array.push(c);
+			} else {
+				array.push('#ffffff');
+			}
+		}
+		palletes = [...array, ...palletes];
+	}
+
+	function saveLocalColor(color: string) {
+		if (browser && localStorage && isValidHexColor(color)) {
+			let colors = getLocalColors() || [];
+			colors.unshift(color);
+			colors = Array.from(new Set(colors));
+			colors = colors.slice(0, 10);
+			localStorage.setItem(KEY_COLORS, colors.join(','));
+		}
+		return getLocalColors();
+	}
+
+	function getLocalColors(): string[] {
+		let results: string[] = [];
+		if (browser && localStorage) {
+			let str = localStorage.getItem(KEY_COLORS) || '';
+			results = str.split(',').filter((o) => isValidHexColor(o));
+		}
+		return results;
+	}
+
+	function drawColor() {
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+		gradient.addColorStop(0, 'rgb(255, 0, 0)');
+		gradient.addColorStop(0.15, 'rgb(255, 0, 255)');
+		gradient.addColorStop(0.33, 'rgb(0, 0, 255)');
+		gradient.addColorStop(0.49, 'rgb(0, 255, 255)');
+		gradient.addColorStop(0.67, 'rgb(0, 255, 0)');
+		gradient.addColorStop(0.84, 'rgb(255, 255, 0)');
+		gradient.addColorStop(1, 'rgb(255, 0, 0)');
+		ctx.fillStyle = gradient;
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+		gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+		gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+		gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+		gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+		ctx.fillStyle = gradient;
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+	}
+
+	function drawAlphaBar() {
+		alphaCtx.clearRect(0, 0, alphaCanvas.width, alphaCanvas.height);
+
+		// draw transparent checkboard
+		let gridSize = 10;
+		const color1 = 'rgba(255, 255, 255, 1)'; // Light color
+		const color2 = 'rgba(204, 204, 204, 1)'; // Dark color
+		for (let x = 0; x < alphaCanvas.width; x += gridSize) {
+			for (let y = 0; y < alphaCanvas.height; y += gridSize) {
+				alphaCtx.fillStyle = (x / gridSize) % 2 === (y / gridSize) % 2 ? color1 : color2;
+				alphaCtx.fillRect(x, y, gridSize, gridSize);
+			}
+		}
+
+		// Draw alpga gradient
+		alphaGradient = alphaCtx.createLinearGradient(0, 0, alphaCanvas.width, 0);
+		alphaGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+		alphaGradient.addColorStop(1, 'rgba(255, 255, 255, 1)');
+		alphaCtx.fillStyle = alphaGradient;
+		alphaCtx.fillRect(0, 0, alphaCanvas.width, alphaCanvas.height);
+	}
+
+	function pickColor(event: any) {
+		if (!isGradientDragging && !!!event.color) return;
+		let { x, y } = getCanvasEventXY(canvas, event);
+		drawColor();
+		if (event.color) {
+			let { r, g, b } = hexToRGBA(event.color);
+			rgba = { ...rgba, ...{ r, g, b } };
+		} else {
+			const imageData = ctx.getImageData(x, y, 1, 1).data;
+			const [r, g, b] = imageData;
+			rgba = { ...rgba, ...{ r, g, b } };
+		}
+		drawColorSelector(x, y);
+		selectColor();
+	}
+
+	function pickAlpha(event: any) {
+		if (!isAlphaDragging && !!!event.color) return;
+		drawAlphaBar();
+		let { x, y } = getCanvasEventXY(alphaCanvas, event);
+		if (event.color) {
+			let { a } = hexToRGBA(event.color);
+			rgba.a = a;
+		} else {
+			if (x < 3) x = 0;
+			if (x > 252) x = 255;
+			rgba.a = x / 255;
+		}
+		drawAlphaSelector(x, y);
+		selectColor();
+	}
+
+	function drawColorSelector(x: number = 0, y: number = 0) {
+		if (ctx) {
+			ctx.save();
+			ctx.shadowColor = 'gray';
+			ctx.shadowBlur = 3;
+			ctx.shadowOffsetX = 0;
+			ctx.shadowOffsetY = 0;
+			ctx.strokeStyle = '#ffffff';
+			ctx.lineWidth = 4;
+			ctx.beginPath();
+			ctx.arc(x, y, 6, 0, 2 * Math.PI);
+			ctx.stroke();
+			ctx.restore();
+		}
+	}
+
+	const drawAlphaSelector = (x: number = 0, y: number = 0) => {
+		if (alphaCtx) {
+			alphaCtx.save();
+			alphaCtx.shadowColor = 'gray';
+			alphaCtx.shadowBlur = 2;
+			alphaCtx.shadowOffsetX = 1;
+			alphaCtx.shadowOffsetY = 1;
+			alphaCtx.strokeStyle = '#000';
+			alphaCtx.lineWidth = 4;
+			alphaCtx.beginPath();
+			alphaCtx.arc(x, 10, 6, 0, 2 * Math.PI);
+			alphaCtx.stroke();
+			alphaCtx.restore();
+		}
+	};
+
+	function selectColor() {
+		let rgbaColor = `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a})`;
+		let hexColor = rgbaToHex(rgbaColor);
+		if (hexColor != color) {
+			color = hexColor;
+			if (rgbaFormat) {
+				dispatch('color', rgbaColor);
+			} else {
+				dispatch('color', color);
+			}
+		}
+	}
+
+	function setColor(color: string) {
+		if (color && isValidHexColor(color)) {
+			const [x, y, a] = estimateColorPosition(color, 255, 255, ctx);
+			pickColor({ offsetX: x, offsetY: y, color });
+			pickAlpha({ offsetX: a * 255, offsetY: 10, color });
+		} else {
+			color = oldColor;
+		}
+	}
+
+	function handleCopy() {
+		isCopied = true;
+		copyText(color);
+		dispatch('copy', color);
+		setTimeout(() => {
+			isCopied = false;
+		}, 700);
+		save(color);
+	}
+
+	function handleInputFocus(e: any) {
+		if (e.target) {
+			setTimeout(() => {
+				oldColor = color;
+				e.target.select();
+			}, 200);
+		}
+	}
+
+	function handleEnterKey(event: any) {
+		if (event.key === 'Enter' || event.keyCode === 13) {
+			setColor(color);
+		}
+	}
 </script>
 
-<div class="picker-container">
+<div class="color-picker-container">
 	<div>
-		<div class="canvas-container">
-			<div>
-				<canvas
-					id="gradient"
-					bind:this={gradientCanvasRef}
-					width="256"
-					height="256"
-					on:click={(e) => handleGradientCanvasChnage(e)}
-					on:touchmove|stopPropagation|preventDefault={(e) => handleGradientCanvasChnage(e)}
-					on:touchstart|stopPropagation|preventDefault={(e) => (
-						(isGradientDragging = true), handleGradientCanvasChnage(e)
-					)}
-					on:touchend|stopPropagation|preventDefault={() => (isGradientDragging = false)}
-					on:mousemove|stopPropagation|preventDefault={(e) => handleGradientCanvasChnage(e)}
-					on:mousedown|stopPropagation|preventDefault={(e) => (
-						(isGradientDragging = true), handleGradientCanvasChnage(e)
-					)}
-					on:mouseup|stopPropagation|preventDefault={() => (isGradientDragging = false)}
-				/>
-			</div>
-			<div>
-				<canvas
-					id="colorBar"
-					bind:this={colorBarCanvasRef}
-					width="256"
-					height="20"
-					style=""
-					class="color-bar"
-					on:touchmove|stopPropagation|preventDefault={(e) => handleColorBarChange(e)}
-					on:touchstart|stopPropagation|preventDefault={(e) => (
-						(isColorBarDragging = true), handleColorBarChange(e)
-					)}
-					on:touchend|stopPropagation|preventDefault={() => (isColorBarDragging = false)}
-					on:mousemove|stopPropagation|preventDefault={(e) => handleColorBarChange(e)}
-					on:mousedown|stopPropagation|preventDefault={(e) => (
-						(isColorBarDragging = true), handleColorBarChange(e)
-					)}
-					on:mouseup|stopPropagation|preventDefault={() => (isColorBarDragging = false)}
-				/>
-			</div>
-
-			<div>
-				<canvas
-					id="alphaBar"
-					bind:this={alphaCanvasRef}
-					width="256"
-					height="20"
-					style=""
-					class="alpha-bar"
-					on:touchmove|stopPropagation|preventDefault={(e) => handleAlphaBarChange(e)}
-					on:touchstart|stopPropagation|preventDefault={(e) => (
-						(isAlphaDragging = true), handleAlphaBarChange(e)
-					)}
-					on:touchend|stopPropagation|preventDefault={() => (isAlphaDragging = false)}
-					on:mousemove|stopPropagation|preventDefault={(e) => handleAlphaBarChange(e)}
-					on:mousedown|stopPropagation|preventDefault={(e) => (
-						(isAlphaDragging = true), handleAlphaBarChange(e)
-					)}
-					on:mouseup|stopPropagation|preventDefault={() => (isAlphaDragging = false)}
-				/>
-			</div>
+		<div class="gradient-container">
+			<canvas
+				bind:this={canvas}
+				width="255"
+				height="255"
+				on:touchmove|stopPropagation|preventDefault={(e) => pickColor(e)}
+				on:touchstart|stopPropagation|preventDefault={(e) => (
+					(isGradientDragging = true), pickColor(e)
+				)}
+				on:touchend|stopPropagation|preventDefault={() => (isGradientDragging = false)}
+				on:mousemove|stopPropagation|preventDefault={(e) => pickColor(e)}
+				on:mousedown|stopPropagation|preventDefault={(e) => (
+					(isGradientDragging = true), pickColor(e)
+				)}
+				on:mouseup|stopPropagation|preventDefault={() => (isGradientDragging = false)}
+			/>
+		</div>
+		<div class="alpha-container">
+			<canvas
+				bind:this={alphaCanvas}
+				width="255"
+				height="20"
+				on:touchmove|stopPropagation|preventDefault={(e) => pickAlpha(e)}
+				on:touchstart|stopPropagation|preventDefault={(e) => (
+					(isAlphaDragging = true), pickAlpha(e)
+				)}
+				on:touchend|stopPropagation|preventDefault={() => (isAlphaDragging = false)}
+				on:mousemove|stopPropagation|preventDefault={(e) => pickAlpha(e)}
+				on:mousedown|stopPropagation|preventDefault={(e) => (
+					(isAlphaDragging = true), pickAlpha(e)
+				)}
+				on:mouseup|stopPropagation|preventDefault={() => (isAlphaDragging = false)}
+			/>
 		</div>
 		<div class="color-container">
-			<div
-				id="selectedColor"
-				class="color-selector"
-				bind:this={selectedColorDivRef}
-				style="background-color:{rgbaColor}"
-				title={hexColor}
+			<button
+				class="color-preview"
+				style:background-color={color}
+				title={color}
+				on:click={handleCopy}
 			>
-				<div>{hexColor}</div>
+				{#if isCopied}
+					<span>{copyString}</span>
+				{:else}
+					<input
+						name="color"
+						id="color-input"
+						on:click|stopPropagation|preventDefault
+						bind:value={color}
+						on:focus={handleInputFocus}
+						on:blur={() => setColor(color)}
+						on:keydown={handleEnterKey}
+					/>
+				{/if}
+			</button>
+			<div class="color-palletes">
+				{#each palletes as item}
+					<button
+						class="btn btn-sm p-0 pallete"
+						style:background-color={item}
+						on:click={() => setColor(item)}>&nbsp;</button
+					>
+				{/each}
 			</div>
-			<!-- <input type="text" bind:value={hexColor} class="color-display" readonly /> -->
 		</div>
 	</div>
 </div>
 
-<style>
-	canvas {
-		border: 1px solid #d1d1d1;
-		border-radius: 3px;
-	}
-	.color-selector {
-		width: 50px;
-		height: 50px;
-		border: 1px solid #d1d1d1;
-		margin-top: 10px;
-		border-radius: 4px;
+<style lang="scss">
+	.color-picker-container {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
-	.color-selector > div {
-		font-size: 10px;
-		color: white;
-		text-shadow: 1px 1px 2px #000;
+	canvas {
+		border: 1px solid #d1d1d1;
+		cursor: crosshair;
+		border-radius: 5px;
 	}
 
-	.color-display {
-		background-color: #f5f5f5;
-		border: none;
-		outline: none;
-		margin-left: 16px;
-		border-radius: 5px;
-		padding: 8px 16px;
+	.alpha-container {
+		margin-top: 8px;
 	}
 	.color-container {
 		display: flex;
-		align-items: end;
+		margin-top: 8px;
+		justify-content: start;
 	}
-	.picker-container {
+	.color-preview {
+		height: 64px;
+		width: 64px;
+		border: 1px solid #d1d1d1;
+		border-radius: 3px;
 		display: flex;
+		align-items: center;
 		justify-content: center;
+		color: #ffffffaa;
+		font-size: 10px;
+		text-shadow: 1px 1px 1px #000;
+
+		input {
+			border: none;
+			padding: 0;
+			width: 100%;
+			color: #fff;
+			font-size: 10px;
+			text-shadow: 1px 1px 1px #000;
+			background-color: transparent;
+			outline: none;
+			text-align: center;
+		}
 	}
-	.color-bar {
-		margin-top: 8px;
-	}
-	.alpha-bar {
-		margin-top: 8px;
+	.color-palletes {
+		flex-grow: 1;
+		display: flex;
+		flex-wrap: wrap;
+		max-width: 180px;
+		padding: 0 2px;
+		margin-left: 8px;
+		.pallete {
+			width: 16px;
+			margin: 1px;
+			height: 16px;
+			border: 1px solid #d1d1d1;
+			border-radius: 2px;
+			cursor: pointer;
+		}
+		.pallete:hover {
+			border: 1px solid #b1b1b1;
+		}
 	}
 </style>
