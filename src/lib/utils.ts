@@ -114,3 +114,25 @@ export function hexToHsl(hex: string) {
 
     return { h: h * 360, s: s * 100, l: l * 100 };
 }
+
+export function createGradientCanvas(width: number, height: number) {
+    // Create an offscreen canvas
+    const offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = width;
+    offscreenCanvas.height = height;
+    const offscreenCtx = offscreenCanvas.getContext('2d');
+    if (offscreenCtx) {
+        // Draw the gradient on the offscreen canvas
+        for (let y = 0; y < height; y++) {
+            const ratio = y / (height - 1);
+            for (let x = 0; x < width; x++) {
+                const hue = x / width * 360;
+                const lightness = 100 - ratio * 100;
+                offscreenCtx.fillStyle = `hsl(${hue},${100}%,${lightness}%)`;
+                offscreenCtx.fillRect(x, y, 1, 1);
+            }
+        }
+    }
+
+    return offscreenCanvas;
+}

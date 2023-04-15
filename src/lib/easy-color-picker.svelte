@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		copyText,
+		createGradientCanvas,
 		getCanvasEventXY,
 		hexToHsl,
 		hexToRGBA,
@@ -53,6 +54,7 @@
 	let oldColor: string;
 	let isCopied: boolean = false;
 	let palletes: string[] = [];
+	let offscreenGradientCanvas:any;
 
 	const KEY_COLORS = 'easy.colors.values';
 
@@ -112,15 +114,10 @@
 	}
 
 	function drawColor() {
-		for (let y = 0; y < canvas.height; y++) {
-			const ratio = y / (canvas.height - 1);
-			for (let x = 0; x < canvas.width; x++) {
-				const hue = (x / canvas.width) * 360;
-				const lightness = 100 - ratio * 100;
-				ctx.fillStyle = `hsl(${hue},${100}%,${lightness}%)`;
-				ctx.fillRect(x, y, 1, 1);
-			}
+ 		if(!offscreenGradientCanvas){
+			offscreenGradientCanvas = createGradientCanvas(canvas.width,canvas.height);
 		}
+		ctx.drawImage(offscreenGradientCanvas, 0, 0);
 	}
 
 	function drawAlphaBar() {
