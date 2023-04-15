@@ -1,8 +1,8 @@
 <script lang="ts">
 	import {
 		copyText,
-		estimateColorPosition,
 		getCanvasEventXY,
+		hexToHsl,
 		hexToRGBA,
 		isValidHexColor,
 		rgbaToHex
@@ -112,25 +112,15 @@
 	}
 
 	function drawColor() {
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-		gradient.addColorStop(0, 'rgb(255, 0, 0)');
-		gradient.addColorStop(0.15, 'rgb(255, 0, 255)');
-		gradient.addColorStop(0.33, 'rgb(0, 0, 255)');
-		gradient.addColorStop(0.49, 'rgb(0, 255, 255)');
-		gradient.addColorStop(0.67, 'rgb(0, 255, 0)');
-		gradient.addColorStop(0.84, 'rgb(255, 255, 0)');
-		gradient.addColorStop(1, 'rgb(255, 0, 0)');
-		ctx.fillStyle = gradient;
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-		gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-		gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-		gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
-		gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
-		gradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
-		ctx.fillStyle = gradient;
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		for (let y = 0; y < canvas.height; y++) {
+			const ratio = y / (canvas.height - 1);
+			for (let x = 0; x < canvas.width; x++) {
+				const hue = (x / canvas.width) * 360;
+				const lightness = 100 - ratio * 100;
+				ctx.fillStyle = `hsl(${hue},${100}%,${lightness}%)`;
+				ctx.fillRect(x, y, 1, 1);
+			}
+		}
 	}
 
 	function drawAlphaBar() {
@@ -232,9 +222,17 @@
 		}
 	}
 
+	function estimateColorPosition(hex: string) {
+		const hsl = hexToHsl(hex);
+		const rgba = hexToRGBA(hex);
+		const x = Math.round((hsl.h / 360) * canvas.width);
+		const y = Math.round((1 - hsl.l / 100) * canvas.height);
+		return { x, y, a: rgba.a };
+	}
+
 	function setColor(color: string) {
 		if (color && isValidHexColor(color)) {
-			const [x, y, a] = estimateColorPosition(color, 255, 255, ctx);
+			const { x, y, a } = estimateColorPosition(color);
 			pickColor({ offsetX: x, offsetY: y, color });
 			pickAlpha({ offsetX: a * 255, offsetY: 10, color });
 		} else {
