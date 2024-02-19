@@ -9,7 +9,7 @@
 		rgbaToHex
 	} from './utils';
 	import { onMount, createEventDispatcher } from 'svelte';
-	import { browser } from '$app/environment';
+	import { BROWSER } from 'esm-env';
 
 	let defaultColorPalletes: string[] = [
 		'#f44336',
@@ -94,7 +94,7 @@
 	}
 
 	function saveLocalColor(color: string) {
-		if (browser && localStorage && isValidHexColor(color)) {
+		if (BROWSER && localStorage && isValidHexColor(color)) {
 			let colors = getLocalColors() || [];
 			colors.unshift(color);
 			colors = Array.from(new Set(colors));
@@ -106,7 +106,7 @@
 
 	function getLocalColors(): string[] {
 		let results: string[] = [];
-		if (browser && localStorage) {
+		if (BROWSER && localStorage) {
 			let str = localStorage.getItem(KEY_COLORS) || '';
 			results = str.split(',').filter((o) => isValidHexColor(o));
 		}

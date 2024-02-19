@@ -1,0 +1,29 @@
+{
+    "name": "@cloudparker/easy-color-picker-svelte",
+    "version": "1.3.1",
+    "author": "cloudparker.com",
+    "license": "MIT",
+    "keywords": [
+        "svelte",
+        "color",
+        "picker",
+        "js"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "svelte": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "!dist/**/*.test.*",
+        "!dist/**/*.spec.*"
+    ],
+    "type": "module",
+    "svelte": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "peerDependencies": {
+        "svelte": "^4.2.11"
+    }
+}
