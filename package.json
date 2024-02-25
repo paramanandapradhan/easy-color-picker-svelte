@@ -1,6 +1,6 @@
 {
 	"name": "@cloudparker/easy-color-picker-svelte",
-	"version": "1.3.1",
+	"version": "1.4.0",
 	"author": "cloudparker.com",
 	"license": "MIT",
 	"keywords": [
@@ -53,7 +53,7 @@
 		"prettier": "^3.2.5",
 		"prettier-plugin-svelte": "^3.2.1",
 		"publint": "^0.2.7",
-		"sass": "^1.71.0",
+		"sass": "^1.71.1",
 		"svelte": "^4.2.11",
 		"svelte-check": "^3.6.4",
 		"tslib": "^2.6.2",

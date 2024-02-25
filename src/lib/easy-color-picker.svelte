@@ -46,7 +46,6 @@
 
 	let ctx: CanvasRenderingContext2D;
 	let alphaCtx: CanvasRenderingContext2D;
-	let gradient: CanvasGradient;
 	let alphaGradient: CanvasGradient;
 	let isGradientDragging: boolean = false;
 	let isAlphaDragging: boolean = false;
@@ -54,7 +53,7 @@
 	let oldColor: string;
 	let isCopied: boolean = false;
 	let palletes: string[] = [];
-	let offscreenGradientCanvas:any;
+	let offscreenGradientCanvas: any;
 
 	const KEY_COLORS = 'easy.colors.values';
 
@@ -66,6 +65,16 @@
 			saveLocalColor(color);
 			calculatePalletes();
 			selectColor();
+		}
+	}
+
+	export function setColor(color: string) {
+		if (color && isValidHexColor(color)) {
+			const { x, y, a } = estimateColorPosition(color);
+			pickColor({ offsetX: x, offsetY: y, color });
+			pickAlpha({ offsetX: a * 255, offsetY: 10, color });
+		} else {
+			color = oldColor;
 		}
 	}
 
@@ -114,8 +123,8 @@
 	}
 
 	function drawColor() {
- 		if(!offscreenGradientCanvas){
-			offscreenGradientCanvas = createGradientCanvas(canvas.width,canvas.height);
+		if (!offscreenGradientCanvas) {
+			offscreenGradientCanvas = createGradientCanvas(canvas.width, canvas.height);
 		}
 		ctx.drawImage(offscreenGradientCanvas, 0, 0);
 	}
@@ -227,16 +236,6 @@
 		return { x, y, a: rgba.a };
 	}
 
-	function setColor(color: string) {
-		if (color && isValidHexColor(color)) {
-			const { x, y, a } = estimateColorPosition(color);
-			pickColor({ offsetX: x, offsetY: y, color });
-			pickAlpha({ offsetX: a * 255, offsetY: 10, color });
-		} else {
-			color = oldColor;
-		}
-	}
-
 	function handleCopy() {
 		isCopied = true;
 		copyText(color);
@@ -325,8 +324,10 @@
 					<button
 						class="btn btn-sm p-0 pallete"
 						style:background-color={item}
-						on:click={() => setColor(item)}>&nbsp;</button
+						on:click={() => setColor(item)}
 					>
+						&nbsp;
+					</button>
 				{/each}
 			</div>
 		</div>
