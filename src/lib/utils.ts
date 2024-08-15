@@ -137,3 +137,12 @@ export function createGradientCanvas(width: number, height: number) {
 
     return offscreenCanvas;
 }
+
+export function blockEvent(event: MouseEvent | TouchEvent) {
+    if (event?.stopPropagation) {
+        event.stopPropagation();
+    }
+    if (event?.preventDefault) {
+        event.preventDefault();
+    }
+}

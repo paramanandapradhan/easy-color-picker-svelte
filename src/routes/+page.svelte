@@ -2,6 +2,7 @@
 	import EasyColorPicker from '$lib';
 	import ColorAlphaBar, { AlphaBarDirectionEnum } from '$lib/color-alpha-bar.svelte';
 	import ColorBoard from '$lib/color-board.svelte';
+	import ColorPalletes from '$lib/color-palletes.svelte';
 
 	let color = $state('#0000ff');
 	let selectedAlpha = $state(1);
@@ -43,3 +44,5 @@
 <ColorBoard size={100} bind:color></ColorBoard>
 
 <div>{color}</div>
+
+<ColorPalletes />

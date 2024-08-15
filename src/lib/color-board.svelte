@@ -9,6 +9,7 @@
 
 <script lang="ts">
 	import {
+	blockEvent,
 		createGradientCanvas,
 		getCanvasEventXY,
 		hexToHsl,
@@ -112,15 +113,7 @@
 		}
 	}
 
-	function blockEvent(event: MouseEvent | TouchEvent) {
-		if (event?.stopPropagation) {
-			event.stopPropagation();
-		}
-		if (event?.preventDefault) {
-			event.preventDefault();
-		}
-	}
-
+ 
 	function handleColorMouseDown(event: MouseEvent | TouchEvent) {
 		blockEvent(event);
 		isGradientDragging = true;

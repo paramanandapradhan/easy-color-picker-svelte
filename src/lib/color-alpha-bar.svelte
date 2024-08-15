@@ -19,7 +19,7 @@
 </script>
 
 <script lang="ts">
-	import { getCanvasEventXY, hexToRGBA } from './utils';
+	import { blockEvent, getCanvasEventXY, hexToRGBA } from './utils';
 
 	let {
 		id,
@@ -139,16 +139,7 @@
 			onAlpha && onAlpha(alpha);
 		}
 	}
-
-	function blockEvent(event: MouseEvent | TouchEvent) {
-		if (event?.stopPropagation) {
-			event.stopPropagation();
-		}
-		if (event?.preventDefault) {
-			event.preventDefault();
-		}
-	}
-
+ 
 	function handleAlphaMouseDown(event: MouseEvent | TouchEvent) {
 		blockEvent(event);
 		isAlphaDragging = true;
