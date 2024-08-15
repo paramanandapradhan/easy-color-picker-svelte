@@ -1,18 +1,23 @@
 <script lang="ts">
 	import EasyColorPicker from '$lib';
 	import ColorAlphaBar, { AlphaBarDirectionEnum } from '$lib/color-alpha-bar.svelte';
+	import ColorBoard from '$lib/color-board.svelte';
 
-	let selectedColor = $state('#0000ff');
+	let color = $state('#0000ff');
 	let selectedAlpha = $state(1);
 
 	function handleColorChange(color: string) {
 		console.log(color);
-		selectedColor = color;
+		// selectedColor = color;
 	}
 
 	function handleAlpha(alpha: number) {
 		selectedAlpha = alpha;
 	}
+
+	// function handleColor(color: string) {
+	// 	color = color;
+	// }
 </script>
 
 <!-- 
@@ -22,7 +27,7 @@
 	rgbaFormat={false}
 	colorPalletes={['#f57f17', '#00c853', '#00bfa5', '#2962ff']}
 /> -->
-<div>
+<!-- <div>
 	<ColorAlphaBar
 		onAlpha={handleAlpha}
 		height={200}
@@ -33,4 +38,8 @@
 </div>
 <div>
 	{selectedAlpha}
-</div>
+</div> -->
+
+<ColorBoard size={100} bind:color></ColorBoard>
+
+<div>{color}</div>

@@ -118,7 +118,7 @@
 
 	function pickAlpha(event: MouseEvent | TouchEvent) {
 		if (canvas && ctx) {
-			if (!isAlphaDragging) return;
+			
 			drawAlphaBar();
 
 			let { x, y } = getCanvasEventXY(canvas, event);
@@ -156,6 +156,7 @@
 	}
 
 	function handleAlphaMouseMove(event: MouseEvent | TouchEvent) {
+        if (!isAlphaDragging) return;
 		blockEvent(event);
 		pickAlpha(event);
 	}
@@ -198,10 +199,10 @@
 
 	$effect(() => {
 		if (canvas && width && height) {
-			if (!ctx) {
-				ctx = canvas.getContext('2d', { willReadFrequently: true }) as any;
-			}
 			setTimeout(() => {
+				if (canvas && !ctx) {
+					ctx = canvas.getContext('2d', { willReadFrequently: true }) as any;
+				}
 				drawAlphaBar();
 				getXYFromAlpha();
 				drawAlphaSelector(...getXYFromAlpha());
