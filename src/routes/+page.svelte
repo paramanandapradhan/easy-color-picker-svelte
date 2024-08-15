@@ -1,6 +1,6 @@
 <script lang="ts">
 	import EasyColorPicker from '$lib';
-	import ColorAlphaBar from '$lib/color-alpha-bar.svelte';
+	import ColorAlphaBar, { AlphaBarDirectionEnum } from '$lib/color-alpha-bar.svelte';
 
 	let selectedColor = $state('#0000ff');
 	let selectedAlpha = $state(1);
@@ -23,7 +23,12 @@
 	colorPalletes={['#f57f17', '#00c853', '#00bfa5', '#2962ff']}
 /> -->
 <div>
-	<ColorAlphaBar onAlpha={handleAlpha} height={50} />
+	<ColorAlphaBar
+		onAlpha={handleAlpha}
+		height={200}
+		width={20}
+		direction={AlphaBarDirectionEnum.VERTICAL}
+	/>
 </div>
 <div>
 	{selectedAlpha}

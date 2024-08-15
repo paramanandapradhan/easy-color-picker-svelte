@@ -1,41 +1,57 @@
-<script lang="ts">
-	import { getCanvasEventXY, hexToRGBA } from './utils';
-
-	type PropsType = {
+<script lang="ts" context="module">
+	export enum AlphaBarDirectionEnum {
+		HORIZONTAL = 'horizontal',
+		VERTICAL = 'vertical'
+	}
+	type AlphaBarPropsType = {
 		id?: string;
 		containerClassName?: string;
 		innerClassName?: string;
 		className?: string;
 		height?: number;
 		width?: number;
-		direction?: 'X' | 'Y';
+		alpha?: number;
+		direction?: AlphaBarDirectionEnum;
+		color?: string;
 		onAlpha?: (alpha: number) => void;
 	};
+</script>
+
+<script lang="ts">
+	import { getCanvasEventXY, hexToRGBA } from './utils';
 
 	let {
 		id,
 		containerClassName,
 		innerClassName,
 		className,
-		height = 8,
+		height = 0,
 		width = 0,
-		direction = 'X',
+		direction = AlphaBarDirectionEnum.HORIZONTAL,
+		alpha = $bindable(1),
+		color,
 		onAlpha
-	}: PropsType = $props();
+	}: AlphaBarPropsType = $props();
 
-	let alapha: number = $state(1);
+	let clientHeight: number = $state(0);
+	let clientWidth: number = $state(0);
 
 	let isAlphaDragging: boolean = $state(false);
 
 	let canvas: HTMLCanvasElement | null = $state(null);
 	let ctx: CanvasRenderingContext2D | null = $state(null);
 
+	function isHorizontalDirection() {
+		return direction === AlphaBarDirectionEnum.HORIZONTAL;
+	}
+
 	function drawAlphaBar() {
 		if (canvas && ctx) {
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-			// draw transparent checkboard
-			let gridSize = height / 2;
+			let size = isHorizontalDirection() ? height : width;
+
+			let gridSize = size / 2;
 			const color1 = 'rgba(255, 255, 255, 1)'; // Light color
 			const color2 = 'rgba(204, 204, 204, 1)'; // Dark color
 			for (let x = 0; x < canvas.width; x += gridSize) {
@@ -46,9 +62,12 @@
 			}
 
 			// Draw alpga gradient
-			let alphaGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+			let alphaGradient = isHorizontalDirection()
+				? ctx.createLinearGradient(0, 0, canvas.width, 0)
+				: ctx.createLinearGradient(0, 0, 0, canvas.height);
+
 			alphaGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-			alphaGradient.addColorStop(1, 'rgba(255, 255, 255, 1)');
+			alphaGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
 
 			ctx.fillStyle = alphaGradient;
 
@@ -58,16 +77,27 @@
 
 	const drawAlphaSelector = (x: number = 0, y: number = 0) => {
 		if (ctx) {
-			let lineWidth = height * 0.2;
+			let barSize = isHorizontalDirection() ? width : height;
+			let selectorSize = isHorizontalDirection() ? height : width;
+			let axis = isHorizontalDirection() ? x : y;
+			let lineWidth = selectorSize * 0.2;
+			let strokeColor = axis > barSize / 2 ? '#fff' : '#000';
+
 			ctx.save();
 			ctx.shadowColor = 'gray';
 			ctx.shadowBlur = 2;
 			ctx.shadowOffsetX = 1;
 			ctx.shadowOffsetY = 1;
-			ctx.strokeStyle = '#000';
-			ctx.lineWidth = height / 2 / 2;
+			ctx.strokeStyle = strokeColor;
+			ctx.lineWidth = selectorSize / 2 / 2;
 			ctx.beginPath();
-			ctx.arc(x, height / 2, height / 2 - lineWidth, 0, 2 * Math.PI);
+
+			if (isHorizontalDirection()) {
+				ctx.arc(axis, selectorSize / 2, selectorSize / 2 - lineWidth, 0, 2 * Math.PI);
+			} else {
+				ctx.arc(selectorSize / 2, axis, selectorSize / 2 - lineWidth, 0, 2 * Math.PI);
+			}
+
 			ctx.stroke();
 			ctx.restore();
 		}
@@ -79,13 +109,17 @@
 			drawAlphaBar();
 
 			let { x, y } = getCanvasEventXY(canvas, event);
-			alapha = (x / 255) * (255 / width);
-			if (alapha < 0.01) alapha = 0;
-			if (alapha > 0.99) alapha = 1;
+			let size = isHorizontalDirection() ? width : height;
+			let axis = isHorizontalDirection() ? x : y;
+
+			alpha = (axis / 255) * (255 / size);
+
+			if (alpha < 0.01) alpha = 0;
+			if (alpha > 0.99) alpha = 1;
 
 			drawAlphaSelector(x, y);
 
-			onAlpha && onAlpha(alapha);
+			onAlpha && onAlpha(alpha);
 		}
 	}
 
@@ -114,6 +148,33 @@
 		isAlphaDragging = false;
 	}
 
+	function getXYFromAlpha() {
+		if (alpha != null) {
+			let barSize = isHorizontalDirection() ? width : height;
+			let axis = barSize * alpha;
+			let x = width;
+			let y = height;
+			if (isHorizontalDirection()) {
+				x = axis;
+				y = height / 2;
+			} else {
+				x = width / 2;
+				y = axis;
+			}
+			return [x, y];
+		}
+		return [0, 0];
+	}
+
+	$effect(() => {
+		if (color) {
+			let { r, g, b, a } = hexToRGBA(color);
+			if (a != null) {
+				alpha = a;
+			}
+		}
+	});
+
 	$effect(() => {
 		if (canvas && width && height) {
 			if (!ctx) {
@@ -121,14 +182,15 @@
 			}
 			setTimeout(() => {
 				drawAlphaBar();
-				drawAlphaSelector();
+				getXYFromAlpha();
+				drawAlphaSelector(...getXYFromAlpha());
 			}, 100);
 		}
 	});
 </script>
 
 <div class="alpha-bar-container {containerClassName}">
-	<div class="alpha-bar-inner {innerClassName}" bind:clientWidth={width}>
+	<div class="alpha-bar-inner {innerClassName}">
 		<!-- svelte-ignore element_invalid_self_closing_tag -->
 		<canvas
 			{id}
