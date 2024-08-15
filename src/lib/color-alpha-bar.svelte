@@ -13,6 +13,7 @@
 		alpha?: number;
 		direction?: AlphaBarDirectionEnum;
 		color?: string;
+		reverse?: boolean;
 		onAlpha?: (alpha: number) => void;
 	};
 </script>
@@ -30,6 +31,7 @@
 		direction = AlphaBarDirectionEnum.HORIZONTAL,
 		alpha = $bindable(1),
 		color,
+		reverse = false,
 		onAlpha
 	}: AlphaBarPropsType = $props();
 
@@ -66,8 +68,13 @@
 				? ctx.createLinearGradient(0, 0, canvas.width, 0)
 				: ctx.createLinearGradient(0, 0, 0, canvas.height);
 
-			alphaGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-			alphaGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+			if (reverse) {
+				alphaGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+				alphaGradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+			} else {
+				alphaGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+				alphaGradient.addColorStop(1, 'rgba(0, 0, 0, 1)');
+			}
 
 			ctx.fillStyle = alphaGradient;
 
@@ -81,7 +88,13 @@
 			let selectorSize = isHorizontalDirection() ? height : width;
 			let axis = isHorizontalDirection() ? x : y;
 			let lineWidth = selectorSize * 0.2;
-			let strokeColor = axis > barSize / 2 ? '#fff' : '#000';
+
+			let strokeColor = '#fff';
+			if (reverse) {
+				strokeColor = axis < barSize / 2 ? '#fff' : '#000';
+			} else {
+				strokeColor = axis > barSize / 2 ? '#fff' : '#000';
+			}
 
 			ctx.save();
 			ctx.shadowColor = 'gray';
@@ -112,7 +125,11 @@
 			let size = isHorizontalDirection() ? width : height;
 			let axis = isHorizontalDirection() ? x : y;
 
-			alpha = (axis / 255) * (255 / size);
+			let value = axis;
+			if (reverse) {
+				value = size - axis;
+			}
+			alpha = (value / 255) * (255 / size);
 
 			if (alpha < 0.01) alpha = 0;
 			if (alpha > 0.99) alpha = 1;
@@ -154,6 +171,9 @@
 			let axis = barSize * alpha;
 			let x = width;
 			let y = height;
+			if (reverse) {
+				axis = barSize - axis;
+			}
 			if (isHorizontalDirection()) {
 				x = axis;
 				y = height / 2;
@@ -161,6 +181,7 @@
 				x = width / 2;
 				y = axis;
 			}
+
 			return [x, y];
 		}
 		return [0, 0];

@@ -28,6 +28,7 @@
 		height={200}
 		width={20}
 		direction={AlphaBarDirectionEnum.VERTICAL}
+		reverse
 	/>
 </div>
 <div>
