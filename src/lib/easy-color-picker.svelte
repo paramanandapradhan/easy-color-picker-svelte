@@ -8,8 +8,24 @@
 		isValidHexColor,
 		rgbaToHex
 	} from './utils';
-	import { onMount, createEventDispatcher } from 'svelte';
+
 	import { BROWSER } from 'esm-env';
+
+	type PropsType = {
+		color?: string;
+		copyLabel?: string;
+		rgbaFormat?: boolean;
+		colorPalletes?: string[];
+		onColor: (color: string) => void;
+	};
+
+	let {
+		color = $bindable('#0000ff'),
+		rgbaFormat = false,
+		copyLabel = 'Copied!',
+		colorPalletes = [],
+		onColor
+	}: PropsType = $props();
 
 	let defaultColorPalletes: string[] = [
 		'#f44336',
@@ -35,12 +51,6 @@
 		'#000000'
 	];
 
-	export let color = '#0000ff';
-	export let rgbaFormat: boolean = false;
-	export let copyString = 'Copied!';
-	export let colorPalletes: string[] = [];
-
-	const dispatch = createEventDispatcher();
 	let canvas: HTMLCanvasElement;
 	let alphaCanvas: HTMLCanvasElement;
 
@@ -51,13 +61,11 @@
 	let isAlphaDragging: boolean = false;
 	let rgba: { r: number; g: number; b: number; a: number } = { r: 255, g: 255, b: 255, a: 1 };
 	let oldColor: string;
-	let isCopied: boolean = false;
-	let palletes: string[] = [];
+	let isCopied: boolean = $state(false);
+	let palletes: string[] = $state([]);
 	let offscreenGradientCanvas: any;
 
 	const KEY_COLORS = 'easy.colors.values';
-
-	$: calculatePalletes(palletes);
 
 	export function save(color: string) {
 		if (isValidHexColor(color)) {
@@ -77,15 +85,6 @@
 			color = oldColor;
 		}
 	}
-
-	onMount(() => {
-		rgba = hexToRGBA(color);
-		ctx = canvas.getContext('2d', { willReadFrequently: true }) as any;
-		alphaCtx = alphaCanvas.getContext('2d') as any;
-		drawColor();
-		drawAlphaBar();
-		setColor(color);
-	});
 
 	function calculatePalletes(_?: string[]) {
 		palletes = [...colorPalletes.slice(0, 4), ...defaultColorPalletes];
@@ -221,9 +220,9 @@
 		if (hexColor != color) {
 			color = hexColor;
 			if (rgbaFormat) {
-				dispatch('color', rgbaColor);
+				onColor && onColor(rgbaColor);
 			} else {
-				dispatch('color', color);
+				onColor && onColor(color);
 			}
 		}
 	}
@@ -239,7 +238,7 @@
 	function handleCopy() {
 		isCopied = true;
 		copyText(color);
-		dispatch('copy', color);
+		onColor && onColor(color);
 		setTimeout(() => {
 			isCopied = false;
 		}, 700);
@@ -260,62 +259,109 @@
 			setColor(color);
 		}
 	}
+
+	function blockEvent(event: MouseEvent | TouchEvent) {
+		if (event?.stopPropagation) {
+			event.stopPropagation();
+		}
+		if (event?.preventDefault) {
+			event.preventDefault();
+		}
+	}
+
+	function handleAlphaMouseDown(event: MouseEvent | TouchEvent) {
+		blockEvent(event);
+		isAlphaDragging = true;
+		pickAlpha(event);
+	}
+
+	function handleAlphaMouseMove(event: MouseEvent | TouchEvent) {
+		blockEvent(event);
+		pickAlpha(event);
+	}
+
+	function handleAlphaMouseEnd(event: MouseEvent | TouchEvent) {
+		blockEvent(event);
+		isAlphaDragging = false;
+	}
+
+	function handleColorMouseDown(event: MouseEvent | TouchEvent) {
+		blockEvent(event);
+		isGradientDragging = true;
+		pickColor(event);
+	}
+
+	function handleColorMouseMove(event: MouseEvent | TouchEvent) {
+		blockEvent(event);
+		pickColor(event);
+	}
+
+	function handleColorMouseEnd(event: MouseEvent | TouchEvent) {
+		blockEvent(event);
+		isGradientDragging = false;
+	}
+
+	$effect(() => {
+		calculatePalletes(palletes);
+	});
+
+	$effect(() => {
+		rgba = hexToRGBA(color);
+		ctx = canvas.getContext('2d', { willReadFrequently: true }) as any;
+		alphaCtx = alphaCanvas.getContext('2d') as any;
+		drawColor();
+		drawAlphaBar();
+		setColor(color);
+	});
 </script>
 
 <div class="color-picker-container">
 	<div>
 		<div class="gradient-container">
+			<!-- svelte-ignore element_invalid_self_closing_tag -->
+			<!-- svelte-ignore event_directive_deprecated -->
 			<canvas
 				bind:this={canvas}
 				width="255"
 				height="255"
-				on:touchmove|stopPropagation|preventDefault={(e) => pickColor(e)}
-				on:touchstart|stopPropagation|preventDefault={(e) => (
-					(isGradientDragging = true), pickColor(e)
-				)}
-				on:touchend|stopPropagation|preventDefault={() => (isGradientDragging = false)}
-				on:mousemove|stopPropagation|preventDefault={(e) => pickColor(e)}
-				on:mousedown|stopPropagation|preventDefault={(e) => (
-					(isGradientDragging = true), pickColor(e)
-				)}
-				on:mouseup|stopPropagation|preventDefault={() => (isGradientDragging = false)}
+				ontouchstart={handleColorMouseDown}
+				ontouchmove={handleColorMouseMove}
+				ontouchend={handleColorMouseEnd}
+				onmousedown={handleColorMouseDown}
+				onmousemove={handleColorMouseMove}
+				onmouseup={handleColorMouseEnd}
 			/>
 		</div>
 		<div class="alpha-container">
+			<!-- svelte-ignore element_invalid_self_closing_tag -->
+			<!-- svelte-ignore event_directive_deprecated -->
+
 			<canvas
 				bind:this={alphaCanvas}
 				width="255"
 				height="20"
-				on:touchmove|stopPropagation|preventDefault={(e) => pickAlpha(e)}
-				on:touchstart|stopPropagation|preventDefault={(e) => (
-					(isAlphaDragging = true), pickAlpha(e)
-				)}
-				on:touchend|stopPropagation|preventDefault={() => (isAlphaDragging = false)}
-				on:mousemove|stopPropagation|preventDefault={(e) => pickAlpha(e)}
-				on:mousedown|stopPropagation|preventDefault={(e) => (
-					(isAlphaDragging = true), pickAlpha(e)
-				)}
-				on:mouseup|stopPropagation|preventDefault={() => (isAlphaDragging = false)}
+				ontouchstart={handleAlphaMouseDown}
+				ontouchmove={handleAlphaMouseMove}
+				ontouchend={handleAlphaMouseEnd}
+				onmousedown={handleAlphaMouseDown}
+				onmousemove={handleAlphaMouseMove}
+				onmouseup={handleAlphaMouseEnd}
 			/>
 		</div>
+
 		<div class="color-container">
-			<button
-				class="color-preview"
-				style:background-color={color}
-				title={color}
-				on:click={handleCopy}
-			>
+			<button class="color-preview" style="--bgColor:{color};" title={color} onclick={handleCopy}>
 				{#if isCopied}
-					<span>{copyString}</span>
+					<span>{copyLabel}</span>
 				{:else}
 					<input
 						name="color"
 						id="color-input"
-						on:click|stopPropagation|preventDefault
+						onclick={(event) => blockEvent(event)}
 						bind:value={color}
-						on:focus={handleInputFocus}
-						on:blur={() => setColor(color)}
-						on:keydown={handleEnterKey}
+						onfocus={handleInputFocus}
+						onblur={() => setColor(color)}
+						onkeydown={handleEnterKey}
 					/>
 				{/if}
 			</button>
@@ -324,7 +370,7 @@
 					<button
 						class="btn btn-sm p-0 pallete"
 						style:background-color={item}
-						on:click={() => setColor(item)}
+						onclick={() => setColor(item)}
 					>
 						&nbsp;
 					</button>
@@ -366,7 +412,7 @@
 		color: #ffffffaa;
 		font-size: 10px;
 		text-shadow: 1px 1px 1px #000;
-
+		background-color: var(--bgColor);
 		input {
 			border: none;
 			padding: 0;

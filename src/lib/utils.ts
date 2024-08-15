@@ -12,10 +12,10 @@ export function getCanvasEventXY(canvas: HTMLCanvasElement, event: any): { x: nu
             y = event.offsetY;
         }
     }
-    if (x < 0) x = 0;
-    if (x > 255) x = 255;
-    if (y < 0) y = 0;
-    if (y > 255) y = 255;
+    // if (x < 0) x = 0;
+    // if (x > 255) x = 255;
+    // if (y < 0) y = 0;
+    // if (y > 255) y = 255;
     return { x, y };
 }
 

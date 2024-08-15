@@ -41,7 +41,6 @@ let canvas;
 let alphaCanvas;
 let ctx;
 let alphaCtx;
-let gradient;
 let alphaGradient;
 let isGradientDragging = false;
 let isAlphaDragging = false;
@@ -59,6 +58,15 @@ export function save(color2) {
     saveLocalColor(color2);
     calculatePalletes();
     selectColor();
+  }
+}
+export function setColor(color2) {
+  if (color2 && isValidHexColor(color2)) {
+    const { x, y, a } = estimateColorPosition(color2);
+    pickColor({ offsetX: x, offsetY: y, color: color2 });
+    pickAlpha({ offsetX: a * 255, offsetY: 10, color: color2 });
+  } else {
+    color2 = oldColor;
   }
 }
 onMount(() => {
@@ -207,15 +215,6 @@ function estimateColorPosition(hex) {
   const y = Math.round((1 - hsl.l / 100) * canvas.height);
   return { x, y, a: rgba2.a };
 }
-function setColor(color2) {
-  if (color2 && isValidHexColor(color2)) {
-    const { x, y, a } = estimateColorPosition(color2);
-    pickColor({ offsetX: x, offsetY: y, color: color2 });
-    pickAlpha({ offsetX: a * 255, offsetY: 10, color: color2 });
-  } else {
-    color2 = oldColor;
-  }
-}
 function handleCopy() {
   isCopied = true;
   copyText(color);
@@ -302,8 +301,10 @@ function handleEnterKey(event) {
 					<button
 						class="btn btn-sm p-0 pallete"
 						style:background-color={item}
-						on:click={() => setColor(item)}>&nbsp;</button
+						on:click={() => setColor(item)}
 					>
+						&nbsp;
+					</button>
 				{/each}
 			</div>
 		</div>
