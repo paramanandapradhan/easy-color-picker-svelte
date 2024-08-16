@@ -2,14 +2,13 @@
 	export type ColorBoardPropsType = {
 		size?: number;
 		color?: string;
-		rgbaFormat?: boolean;
 		onColor?: (color: string) => void;
 	};
 </script>
 
 <script lang="ts">
 	import {
-	blockEvent,
+		blockEvent,
 		createGradientCanvas,
 		getCanvasEventXY,
 		hexToHsl,
@@ -18,23 +17,33 @@
 		rgbaToHex
 	} from './utils';
 
-	let { size = 255, color = $bindable('#0000ff'), rgbaFormat, onColor }: ColorBoardPropsType = $props();
+	let { size = 255, color = $bindable('#0000ff'), onColor }: ColorBoardPropsType = $props();
 
 	let canvas: HTMLCanvasElement | null = $state(null);
 	let ctx: CanvasRenderingContext2D | null = $state(null);
 	let isGradientDragging: boolean | null = $state(null);
 
 	let offscreenGradientCanvas: any;
-	let rgba: { r: number; g: number; b: number; a: number } = { r: 255, g: 255, b: 255, a: 1 };
+	let rgba: { r: number; g: number; b: number; a: number } = $state({
+		r: 255,
+		g: 255,
+		b: 255,
+		a: 1
+	});
 
 	let width: number = $state(255);
 	let height: number = $state(255);
 
+	export function setAlpha(alpha: number) {
+		rgba.a = alpha;
+		selectColor();
+	}
+
 	export function setColor(color: string) {
-		console.log('setColor', color);
+		// console.log('setColor', color);
 		if (color && isValidHexColor(color)) {
 			const { x, y, a } = estimateColorPosition(color);
-			console.log('estimateColorPosition', { x, y, a });
+			// console.log('estimateColorPosition', { x, y, a });
 			pickColor({ offsetX: x, offsetY: y }, color);
 			// pickAlpha({ offsetX: a * 255, offsetY: 10, color });
 		}
@@ -60,7 +69,7 @@
 		let hexColor = rgbaToHex(rgbaColor);
 		if (hexColor != color) {
 			color = hexColor;
-			if (rgbaFormat) {
+			if (rgba.a && rgba.a >= 0.0 && rgba.a < 1.0) {
 				onColor && onColor(rgbaColor);
 			} else {
 				onColor && onColor(color);
@@ -113,7 +122,6 @@
 		}
 	}
 
- 
 	function handleColorMouseDown(event: MouseEvent | TouchEvent) {
 		blockEvent(event);
 		isGradientDragging = true;

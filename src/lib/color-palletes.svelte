@@ -1,20 +1,22 @@
-<script lang="ts">
-	import { BROWSER } from 'esm-env';
-	import { blockEvent, copyText, isValidHexColor } from './utils';
-
-	type PropsType = {
+<script context="module">
+	export type ColorPalletesPropsType = {
 		copiedText?: string;
 		color?: string;
 		colorPalletes?: string[];
 		onColor?: (color: string) => void;
 	};
+</script>
+
+<script lang="ts">
+	import { BROWSER } from 'esm-env';
+	import { blockEvent, copyText, isValidHexColor } from './utils';
 
 	let {
 		copiedText = 'Copied!',
 		color = '#0000ff',
 		colorPalletes = [],
 		onColor
-	}: PropsType = $props();
+	}: ColorPalletesPropsType = $props();
 
 	let isCopied: boolean = $state(false);
 	let oldColor: string = $state('#0000ff');
@@ -148,7 +150,6 @@
 <style lang="scss">
 	.color-container {
 		display: flex;
-		margin-top: 8px;
 		justify-content: start;
 	}
 	.color-preview {

@@ -3,7 +3,7 @@
 		HORIZONTAL = 'horizontal',
 		VERTICAL = 'vertical'
 	}
-	type AlphaBarPropsType = {
+	export type AlphaBarPropsType = {
 		id?: string;
 		containerClassName?: string;
 		innerClassName?: string;
@@ -42,6 +42,20 @@
 
 	let canvas: HTMLCanvasElement | null = $state(null);
 	let ctx: CanvasRenderingContext2D | null = $state(null);
+
+	export function setAlpha(newalpha: number) {
+		if (alpha != newalpha) {
+			drawAlphaBar();
+			getXYFromAlpha();
+			drawAlphaSelector(newalpha);
+		}
+	}
+
+	export function setColor(newcolor: string) {
+		if (color != newcolor) {
+			color = newcolor;
+		}
+	}
 
 	function isHorizontalDirection() {
 		return direction === AlphaBarDirectionEnum.HORIZONTAL;
@@ -118,7 +132,6 @@
 
 	function pickAlpha(event: MouseEvent | TouchEvent) {
 		if (canvas && ctx) {
-			
 			drawAlphaBar();
 
 			let { x, y } = getCanvasEventXY(canvas, event);
@@ -139,7 +152,7 @@
 			onAlpha && onAlpha(alpha);
 		}
 	}
- 
+
 	function handleAlphaMouseDown(event: MouseEvent | TouchEvent) {
 		blockEvent(event);
 		isAlphaDragging = true;
@@ -147,7 +160,7 @@
 	}
 
 	function handleAlphaMouseMove(event: MouseEvent | TouchEvent) {
-        if (!isAlphaDragging) return;
+		if (!isAlphaDragging) return;
 		blockEvent(event);
 		pickAlpha(event);
 	}
