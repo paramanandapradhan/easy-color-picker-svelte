@@ -5,6 +5,14 @@ export type EasyColorPickerPropsType = {
     color?: string;
     alphaBarHeight?: number;
     copiedText?: string;
+    colorBoardClassName?: string;
+    alphaBarClassName?: string;
+    colorPalletesClassName?: string;
+    colorBoardContainerClassName?: string;
+    alphaBarContainerClassName?: string;
+    colorPalletesContainerClassName?: string;
+    colorPalletesPreviewButtonClassName?: string;
+    colorPalletesPallateButtonClassName?: string;
     onColor?: (color: string) => void;
 };
 interface $$__sveltets_2_IsomorphicComponent<Props extends Record<string, any> = any, Events extends Record<string, any> = any, Slots extends Record<string, any> = any, Exports = {}, Bindings = string> {

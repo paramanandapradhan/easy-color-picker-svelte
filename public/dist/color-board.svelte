@@ -9,7 +9,12 @@
   isValidHexColor,
   rgbaToHex
 } from "./utils";
-let { size = 255, color = $bindable("#0000ff"), onColor } = $props();
+let {
+  size = 255,
+  color = $bindable("#0000ff"),
+  className,
+  onColor
+} = $props();
 let canvas = $state(null);
 let ctx = $state(null);
 let isGradientDragging = $state(null);
@@ -47,11 +52,7 @@ function selectColor() {
   let hexColor = rgbaToHex(rgbaColor);
   if (hexColor != color) {
     color = hexColor;
-    if (rgba.a && rgba.a >= 0 && rgba.a < 1) {
-      onColor && onColor(rgbaColor);
-    } else {
-      onColor && onColor(color);
-    }
+    onColor && onColor(color);
   }
 }
 function drawColorSelector(x = 0, y = 0) {
@@ -129,7 +130,7 @@ $effect(() => {
 });
 </script>
 
-<div>
+<div class={className}>
 	<!-- svelte-ignore element_invalid_self_closing_tag -->
 	<canvas
 		bind:this={canvas}

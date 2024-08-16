@@ -10,6 +10,14 @@ let {
   alphaBarHeight = 24,
   copiedText,
   color = $bindable("#0000ff"),
+  colorBoardClassName = "",
+  alphaBarClassName = "",
+  colorPalletesClassName = "",
+  colorBoardContainerClassName = "",
+  alphaBarContainerClassName = "",
+  colorPalletesContainerClassName = "",
+  colorPalletesPreviewButtonClassName = "",
+  colorPalletesPallateButtonClassName = "",
   onColor
 } = $props();
 let clientHeight = $state(0);
@@ -29,12 +37,19 @@ function handleAlphaChange(alpha) {
 </script>
 
 <div bind:clientHeight bind:clientWidth>
-	<div class="">
-		<ColorBoard {color} size={clientWidth} onColor={handleColorChange} bind:this={colorBoardRef} />
+	<div class={colorBoardContainerClassName}>
+		<ColorBoard
+			className={colorBoardClassName}
+			{color}
+			size={clientWidth}
+			onColor={handleColorChange}
+			bind:this={colorBoardRef}
+		/>
 	</div>
 	{#if hasAlphaBar}
-		<div class="pt-8">
+		<div class="my-16 {alphaBarContainerClassName}">
 			<ColorAlphaBar
+				className={alphaBarClassName}
 				{color}
 				height={alphaBarHeight}
 				width={clientWidth}
@@ -44,15 +59,24 @@ function handleAlphaChange(alpha) {
 		</div>
 	{/if}
 	{#if hasColorPalletes}
-		<div class="pt-8 center">
-			<ColorPalletes {color} {copiedText} {colorPalletes} onColor={handlePalletColorChange} />
+		<div class="my-16 center {colorPalletesContainerClassName}">
+			<ColorPalletes
+				className={colorPalletesClassName}
+				previewButtonclassName={colorPalletesPreviewButtonClassName}
+				palleteButtonclassName={colorPalletesPallateButtonClassName}
+				{color}
+				{copiedText}
+				{colorPalletes}
+				onColor={handlePalletColorChange}
+			/>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.pt-8 {
-		margin-top: 8px;
+	.my-16 {
+		margin-top: 16px;
+		margin-bottom: 16px;
 	}
 
 	.center {

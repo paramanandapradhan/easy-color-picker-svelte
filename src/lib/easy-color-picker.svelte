@@ -84,7 +84,7 @@
 		</div>
 	{/if}
 	{#if hasColorPalletes}
-		<div class="my-16 center {colorPalletesContainerClassName}">
+		<div class="my-16 center pallete-container {colorPalletesContainerClassName}">
 			<ColorPalletes
 				className={colorPalletesClassName}
 				previewButtonclassName={colorPalletesPreviewButtonClassName}
@@ -106,5 +106,8 @@
 
 	.center {
 		overflow-x: auto;
+	}
+	.pallete-container {
+		min-height: 64px;
 	}
 </style>

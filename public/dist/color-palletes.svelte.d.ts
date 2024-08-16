@@ -2,6 +2,9 @@ export type ColorPalletesPropsType = {
     copiedText?: string;
     color?: string;
     colorPalletes?: string[];
+    className?: string;
+    palleteButtonclassName?: string;
+    previewButtonclassName?: string;
     onColor?: (color: string) => void;
 };
 interface $$__sveltets_2_IsomorphicComponent<Props extends Record<string, any> = any, Events extends Record<string, any> = any, Slots extends Record<string, any> = any, Exports = {}, Bindings = string> {
