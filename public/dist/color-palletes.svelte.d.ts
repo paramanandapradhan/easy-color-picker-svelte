@@ -1,10 +1,7 @@
-export type EasyColorPickerPropsType = {
-    hasAlphaBar?: boolean;
-    hasColorPalletes?: boolean;
-    colorPalletes?: string[];
-    color?: string;
-    alphaBarHeight?: number;
+export type ColorPalletesPropsType = {
     copiedText?: string;
+    color?: string;
+    colorPalletes?: string[];
     onColor?: (color: string) => void;
 };
 interface $$__sveltets_2_IsomorphicComponent<Props extends Record<string, any> = any, Events extends Record<string, any> = any, Slots extends Record<string, any> = any, Exports = {}, Bindings = string> {
@@ -20,8 +17,10 @@ interface $$__sveltets_2_IsomorphicComponent<Props extends Record<string, any> =
     };
     z_$$bindings?: Bindings;
 }
-declare const EasyColorPicker: $$__sveltets_2_IsomorphicComponent<EasyColorPickerPropsType, {
+declare const ColorPalletes: $$__sveltets_2_IsomorphicComponent<ColorPalletesPropsType, {
     [evt: string]: CustomEvent<any>;
-}, {}, {}, "color">;
-type EasyColorPicker = InstanceType<typeof EasyColorPicker>;
-export default EasyColorPicker;
+}, {}, {
+    saveLocalColor: (color: string) => string[];
+}, "">;
+type ColorPalletes = InstanceType<typeof ColorPalletes>;
+export default ColorPalletes;

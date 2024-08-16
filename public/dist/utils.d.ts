@@ -17,3 +17,4 @@ export declare function hexToHsl(hex: string): {
     l: number;
 };
 export declare function createGradientCanvas(width: number, height: number): HTMLCanvasElement;
+export declare function blockEvent(event: MouseEvent | TouchEvent): void;

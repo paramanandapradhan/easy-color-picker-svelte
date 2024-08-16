@@ -1,8 +1,11 @@
-<script context="module">
+<script context="module" lang="ts">
 	export type ColorPalletesPropsType = {
 		copiedText?: string;
 		color?: string;
 		colorPalletes?: string[];
+		className?: string;
+		palleteButtonclassName?: string;
+		previewButtonclassName?: string;
 		onColor?: (color: string) => void;
 	};
 </script>
@@ -15,6 +18,9 @@
 		copiedText = 'Copied!',
 		color = '#0000ff',
 		colorPalletes = [],
+		className = '',
+		palleteButtonclassName = '',
+		previewButtonclassName = '',
 		onColor
 	}: ColorPalletesPropsType = $props();
 
@@ -114,9 +120,14 @@
 	});
 </script>
 
-<div class="color-container">
+<div class="color-container {className}">
 	<div class="color-container">
-		<button class="color-preview" style="--bgColor:{color};" title={color} onclick={handleCopy}>
+		<button
+			class="color-preview {previewButtonclassName}"
+			style="--bgColor:{color};"
+			title={color}
+			onclick={handleCopy}
+		>
 			{#if isCopied}
 				<span>{copiedText}</span>
 			{:else}
@@ -131,11 +142,11 @@
 				/>
 			{/if}
 		</button>
-		<div class="color-palletes">
+		<div class="color-palletes {className}">
 			{#if palletes}
 				{#each palletes as item}
 					<button
-						class="btn btn-sm p-0 pallete"
+						class="btn btn-sm p-0 pallete {palleteButtonclassName}"
 						style:background-color={item}
 						onclick={() => onColor && onColor(item)}
 					>

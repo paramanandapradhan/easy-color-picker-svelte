@@ -2,6 +2,7 @@
 	export type ColorBoardPropsType = {
 		size?: number;
 		color?: string;
+		className?: string;
 		onColor?: (color: string) => void;
 	};
 </script>
@@ -17,7 +18,12 @@
 		rgbaToHex
 	} from './utils';
 
-	let { size = 255, color = $bindable('#0000ff'), onColor }: ColorBoardPropsType = $props();
+	let {
+		size = 255,
+		color = $bindable('#0000ff'),
+		className,
+		onColor
+	}: ColorBoardPropsType = $props();
 
 	let canvas: HTMLCanvasElement | null = $state(null);
 	let ctx: CanvasRenderingContext2D | null = $state(null);
@@ -69,11 +75,7 @@
 		let hexColor = rgbaToHex(rgbaColor);
 		if (hexColor != color) {
 			color = hexColor;
-			if (rgba.a && rgba.a >= 0.0 && rgba.a < 1.0) {
-				onColor && onColor(rgbaColor);
-			} else {
-				onColor && onColor(color);
-			}
+			onColor && onColor(color);
 		}
 	}
 
@@ -162,7 +164,7 @@
 	});
 </script>
 
-<div>
+<div class={className}>
 	<!-- svelte-ignore element_invalid_self_closing_tag -->
 	<canvas
 		bind:this={canvas}

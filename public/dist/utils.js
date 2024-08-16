@@ -14,12 +14,12 @@ export function getCanvasEventXY(canvas, event) {
     }
     if (x < 0)
         x = 0;
-    if (x > 255)
-        x = 255;
+    if (x > canvas.width)
+        x = canvas.width;
     if (y < 0)
         y = 0;
-    if (y > 255)
-        y = 255;
+    if (y > canvas.height)
+        y = canvas.height;
     return { x, y };
 }
 export function hexToRGBA(hex) {
@@ -112,7 +112,7 @@ export function createGradientCanvas(width, height) {
     const offscreenCanvas = document.createElement('canvas');
     offscreenCanvas.width = width;
     offscreenCanvas.height = height;
-    const offscreenCtx = offscreenCanvas.getContext('2d');
+    const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
     if (offscreenCtx) {
         // Draw the gradient on the offscreen canvas
         for (let y = 0; y < height; y++) {
@@ -126,4 +126,12 @@ export function createGradientCanvas(width, height) {
         }
     }
     return offscreenCanvas;
+}
+export function blockEvent(event) {
+    if (event?.stopPropagation) {
+        event.stopPropagation();
+    }
+    if (event?.preventDefault) {
+        event.preventDefault();
+    }
 }

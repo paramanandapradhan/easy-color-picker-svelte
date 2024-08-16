@@ -8,7 +8,11 @@
 </script>
 
 <div style="width:300px">
-	<EasyColorPicker color="#ff0000" onColor={handleColor} colorPalletes={['#f57f17', '#00c853', '#00bfa5', '#2962ff']}></EasyColorPicker>
+	<EasyColorPicker
+		color="#ff0000"
+		onColor={handleColor}
+		colorPalletes={['#f57f17', '#00c853', '#00bfa5', '#2962ff']}
+	></EasyColorPicker>
 </div>
 
 <div>
